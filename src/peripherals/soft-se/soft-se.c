@@ -29,8 +29,10 @@
 #include "utilities.h"
 #include "aes.h"
 #include "cmac.h"
-
+#include <stdlib.h> 
 #include "LoRaMacHeaderTypes.h"
+#include "radio.h"
+
 
 #include "secure-element.h"
 #include "secure-element-nvm.h"
@@ -414,6 +416,19 @@ SecureElementStatus_t SecureElementSetDevEui( uint8_t* devEui )
 uint8_t* SecureElementGetDevEui( void )
 {
     return SeNvm->DevEui;
+}
+
+SecureElementStatus_t SecureElementRandomNumber( uint32_t* randomNum )
+{
+    
+    srand1(Radio.Random());
+
+    if( randomNum == NULL )
+    {
+        return SECURE_ELEMENT_ERROR_NPE;
+    }
+    *randomNum = randr(0, 0x01FFFFFF);
+    return SECURE_ELEMENT_SUCCESS;
 }
 
 SecureElementStatus_t SecureElementSetJoinEui( uint8_t* joinEui )

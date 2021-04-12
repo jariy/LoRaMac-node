@@ -105,7 +105,7 @@ extern "C"
  * Periodicity is equal to 2^REGION_COMMON_DEFAULT_PING_SLOT_PERIODICITY seconds.
  * Example: 2^7 = 128 seconds. The end-device will open an Rx slot every 128 seconds.
  */
-#define REGION_COMMON_DEFAULT_PING_SLOT_PERIODICITY     7
+#define REGION_COMMON_DEFAULT_PING_SLOT_PERIODICITY     4
 
 /*!
  * Default reponse timeout for class b and class c confirmed

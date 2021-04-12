@@ -33,6 +33,7 @@
 #include "LoRaMacTypes.h"
 #include "region/Region.h"
 #include "RegionBaseUS.h"
+#include "stdio.h"
 
 
 /*!

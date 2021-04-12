@@ -252,9 +252,10 @@ PhyParam_t RegionAU915GetPhyParam( GetPhyParams_t* getPhy )
         }
         case PHY_BEACON_CHANNEL_FREQ:
         {
-            phyParam.Value = RegionBaseUSCalcDownlinkFrequency( getPhy->Channel,
+            phyParam.Value = AU915_BEACON_CHANNEL_FREQ;
+            /*phyParam.Value = RegionBaseUSCalcDownlinkFrequency( getPhy->Channel,
                                                                 AU915_BEACON_CHANNEL_FREQ,
-                                                                AU915_BEACON_CHANNEL_STEPWIDTH );
+                                                                AU915_BEACON_CHANNEL_STEPWIDTH );  */
             break;
         }
         case PHY_BEACON_FORMAT:
@@ -271,7 +272,10 @@ PhyParam_t RegionAU915GetPhyParam( GetPhyParams_t* getPhy )
         }
         case PHY_BEACON_NB_CHANNELS:
         {
+            phyParam.Value = 1;
+            /* Jayan Ariyawansa   really dont need it
             phyParam.Value = AU915_BEACON_NB_CHANNELS;
+            */
             break;
         }
         case PHY_PING_SLOT_CHANNEL_FREQ:

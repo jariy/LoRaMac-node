@@ -48,32 +48,32 @@
 /*!
  * LoRaWAN default end-device class
  */
-#define LORAWAN_DEFAULT_CLASS                       CLASS_A
+#define LORAWAN_DEFAULT_CLASS                       CLASS_B
 
 /*!
  * Defines the application data transmission duty cycle. 5s, value in [ms].
  */
-#define APP_TX_DUTYCYCLE                            5000
+#define APP_TX_DUTYCYCLE                            50000
 
 /*!
  * Defines a random delay for application data transmission duty cycle. 1s,
  * value in [ms].
  */
-#define APP_TX_DUTYCYCLE_RND                        1000
+#define APP_TX_DUTYCYCLE_RND                        10000
 
 /*!
  * LoRaWAN Adaptive Data Rate
  *
  * \remark Please note that when ADR is enabled the end-device should be static
  */
-#define LORAWAN_ADR_STATE                           LORAMAC_HANDLER_ADR_ON
+#define LORAWAN_ADR_STATE                           LORAMAC_HANDLER_ADR_OFF
 
 /*!
  * Default datarate
  *
  * \remark Please note that LORAWAN_DEFAULT_DATARATE is used only when ADR is disabled 
  */
-#define LORAWAN_DEFAULT_DATARATE                    DR_0
+#define LORAWAN_DEFAULT_DATARATE                    DR_3
 
 /*!
  * LoRaWAN confirmed messages
@@ -90,7 +90,7 @@
  *
  * \remark Please note that ETSI mandates duty cycled transmissions. Use only for test purposes
  */
-#define LORAWAN_DUTYCYCLE_ON                        true
+#define LORAWAN_DUTYCYCLE_ON                       false
 
 /*!
  * LoRaWAN application port
@@ -107,6 +107,15 @@ typedef enum
     LORAMAC_HANDLER_TX_ON_EVENT,
 }LmHandlerTxEvents_t;
 
+/*!
+ * Counter for MCPS BUSY status
+ */
+int counterMCPS;
+
+/*!
+ * Counter for MLME BUSY status
+ */
+int counter;
 /*!
  * User application data
  */
@@ -256,6 +265,8 @@ extern Uart_t Uart2;
  */
 int main( void )
 {
+    counter = 0; 
+    counterMCPS = 0; 
     BoardInitMcu( );
     BoardInitPeriph( );
 
@@ -266,7 +277,7 @@ int main( void )
     TimerSetValue( &Led2Timer, 25 );
 
     TimerInit( &LedBeaconTimer, OnLedBeaconTimerEvent );
-    TimerSetValue( &LedBeaconTimer, 5000 );
+    TimerSetValue( &LedBeaconTimer, 128000 );
 
     // Initialize transmission periodicity variable
     TxPeriodicity = APP_TX_DUTYCYCLE + randr( -APP_TX_DUTYCYCLE_RND, APP_TX_DUTYCYCLE_RND );
@@ -285,6 +296,7 @@ int main( void )
         {
         }
     }
+    printf( "LoRaMac was properly initialized\n" );
 
     // Set system maximum tolerated rx error in milliseconds
     LmHandlerSetSystemMaxRxError( 20 );
@@ -340,12 +352,12 @@ static void OnNetworkParametersChange( CommissioningParams_t* params )
 
 static void OnMacMcpsRequest( LoRaMacStatus_t status, McpsReq_t *mcpsReq, TimerTime_t nextTxIn )
 {
-    DisplayMacMcpsRequestUpdate( status, mcpsReq, nextTxIn );
+    DisplayMacMcpsRequestUpdate1( status, mcpsReq, nextTxIn, &counterMCPS );
 }
 
-static void OnMacMlmeRequest( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn )
+static void OnMacMlmeRequest( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn)
 {
-    DisplayMacMlmeRequestUpdate( status, mlmeReq, nextTxIn );
+    DisplayMacMlmeRequestUpdate1( status, mlmeReq, nextTxIn, &counter);
 }
 
 static void OnJoinRequest( LmHandlerJoinParams_t* params )
@@ -403,6 +415,7 @@ static void OnClassChange( DeviceClass_t deviceClass )
 
 static void OnBeaconStatusChange( LoRaMacHandlerBeaconParams_t* params )
 {
+    printf("OnBeaconStatusChange \n");
     switch( params->State )
     {
         case LORAMAC_HANDLER_BEACON_RX:

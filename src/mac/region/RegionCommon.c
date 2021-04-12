@@ -33,6 +33,7 @@
 #include "utilities.h"
 #include "RegionCommon.h"
 #include "systime.h"
+#include "stdio.h"
 
 #define BACKOFF_DC_1_HOUR                   100
 #define BACKOFF_DC_10_HOURS                 1000
@@ -497,6 +498,11 @@ uint8_t RegionCommonLinkAdrReqVerifyParams( RegionCommonLinkAdrReqVerifyParams_t
 
 uint32_t RegionCommonComputeSymbolTimeLoRa( uint8_t phyDr, uint32_t bandwidthInHz )
 {
+    printf("\n#------RegionCommonComputeSymbolTimeLoRa---------#\n");
+    printf("\nphyDr: %u\n",phyDr);
+    printf("\nbandwidthInHz: %lu\n",bandwidthInHz);
+    printf("\n tSymbolInUs: %lu\n",( 1 << phyDr ) * 1000000 / bandwidthInHz);
+    printf("\n------------------------------------------------------\n");
     return ( 1 << phyDr ) * 1000000 / bandwidthInHz;
 }
 
@@ -507,10 +513,19 @@ uint32_t RegionCommonComputeSymbolTimeFsk( uint8_t phyDrInKbps )
 
 void RegionCommonComputeRxWindowParameters( uint32_t tSymbolInUs, uint8_t minRxSymbols, uint32_t rxErrorInMs, uint32_t wakeUpTimeInMs, uint32_t* windowTimeoutInSymbols, int32_t* windowOffsetInMs )
 {
+
     *windowTimeoutInSymbols = MAX( DIV_CEIL( ( ( 2 * minRxSymbols - 8 ) * tSymbolInUs + 2 * ( rxErrorInMs * 1000 ) ),  tSymbolInUs ), minRxSymbols ); // Computed number of symbols
     *windowOffsetInMs = ( int32_t )DIV_CEIL( ( int32_t )( 4 * tSymbolInUs ) -
                                                ( int32_t )DIV_CEIL( ( *windowTimeoutInSymbols * tSymbolInUs ), 2 ) -
                                                ( int32_t )( wakeUpTimeInMs * 1000 ), 1000 );
+    printf("\n#------RegionCommonComputeRxWindowParameters---------#\n");
+    printf("\ntSymbolInUs: %lu\n",tSymbolInUs);
+    printf("\nminRxSymbols: %u\n",minRxSymbols);
+    printf("\nrxErrorInMs: %lu\n",rxErrorInMs);
+    printf("\nwakeUpTimeInMs: %lu\n",wakeUpTimeInMs);
+    printf("\nwindowTimeoutInSymbols: %lu\n",*windowTimeoutInSymbols);
+    printf("\nwindowOffsetInMs: %ld\n",*windowOffsetInMs);
+    printf("\n------------------------------------------------------\n");
 }
 
 int8_t RegionCommonComputeTxPower( int8_t txPowerIndex, float maxEirp, float antennaGain )

@@ -28,6 +28,7 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #include "LoRaMacConfirmQueue.h"
 #include "radio.h"
 #include "region/Region.h"
+#include <stdio.h>
 
 #ifdef LORAMAC_CLASSB_ENABLED
 
@@ -268,6 +269,8 @@ static void CalculateBeaconRxWindowConfig( RxConfigParams_t* rxConfig, uint16_t 
                           ( uint32_t ) Ctx.BeaconCtx.BeaconTimePrecision.SubSeconds );
 
         // Calculate downlink symbols
+        printf("\n ***************************************************************************\n");
+        printf("\nCalculateBeaconRxWindowConfig->RegionComputeRxWindowParameters(ClassB BeaconRxWindows)\n");
         RegionComputeRxWindowParameters( *Ctx.LoRaMacClassBParams.LoRaMacRegion,
                                         ( int8_t )phyParam.Value, // datarate
                                         Ctx.LoRaMacClassBParams.LoRaMacParams->MinRxSymbols,
@@ -465,6 +468,7 @@ static void InitClassBDefaults( void )
 
 static void EnlargeWindowTimeout( void )
 {
+    
     // Update beacon movement
     Ctx.BeaconCtx.BeaconWindowMovement *= CLASSB_WINDOW_MOVE_EXPANSION_FACTOR;
     if( Ctx.BeaconCtx.BeaconWindowMovement > CLASSB_WINDOW_MOVE_EXPANSION_MAX )
@@ -482,6 +486,13 @@ static void EnlargeWindowTimeout( void )
     {
         Ctx.PingSlotCtx.SymbolTimeout = CLASSB_PING_SLOT_SYMBOL_TO_EXPANSION_MAX;
     }
+    printf("\n ##-------EnlargeWindowTimeout-------##\n");
+    printf("\n BeaconWindowMovement:%lu \n ",Ctx.BeaconCtx.BeaconWindowMovement);
+    printf("\n BeaconSymbolTimeout:%lu \n ",Ctx.BeaconCtx.SymbolTimeout);
+    printf("\n PingSlotSymbolTimeout:%lu \n ",Ctx.PingSlotCtx.SymbolTimeout);
+    printf("\n ##----------------------------------##\n");
+
+
 }
 
 static void ResetWindowTimeout( void )
@@ -489,6 +500,7 @@ static void ResetWindowTimeout( void )
     Ctx.BeaconCtx.SymbolTimeout = CLASSB_BEACON_SYMBOL_TO_DEFAULT;
     Ctx.PingSlotCtx.SymbolTimeout = CLASSB_BEACON_SYMBOL_TO_DEFAULT;
     Ctx.BeaconCtx.BeaconWindowMovement  = CLASSB_WINDOW_MOVE_DEFAULT;
+    printf("\n ##-------ResetWindowTimeout-------##\n");
 }
 
 static TimerTime_t CalcDelayForNextBeacon( TimerTime_t currentTime, TimerTime_t lastBeaconRx )
@@ -533,6 +545,11 @@ static TimerTime_t UpdateBeaconState( LoRaMacEventInfoStatus_t status,
     // Calculate the next beacon RX time
     beaconEventTime = CalcDelayForNextBeacon( currentTime, SysTimeToMs( Ctx.BeaconCtx.LastBeaconRx ) );
     Ctx.BeaconCtx.NextBeaconRx = SysTimeFromMs( currentTime + beaconEventTime );
+    printf("\n ##-------UpdateBeaconState(Before WindowMovement)-------##\n");
+    printf("\n beaconEventTime(Delay):%lu \n ",beaconEventTime);
+    printf("\n currentTime:%lu \n ",currentTime);
+    printf("\n NextBeaconRx:%lu \n ",Ctx.BeaconCtx.NextBeaconRx);
+    printf("\n ##----------------------------------##\n");
 
     // Take temperature compensation into account
     beaconEventTime = TimerTempCompensation( beaconEventTime, Ctx.BeaconCtx.Temperature );
@@ -543,7 +560,12 @@ static TimerTime_t UpdateBeaconState( LoRaMacEventInfoStatus_t status,
         beaconEventTime -= windowMovement;
     }
     Ctx.BeaconCtx.NextBeaconRxAdjusted = currentTime + beaconEventTime;
-
+    printf("\n ##-------UpdateBeaconState(After WindowMovement)-------##\n");
+    printf("\n beaconEventTime(Delay):%lu \n ",beaconEventTime);
+    printf("\n WindowMovement: %lu\n",windowMovement);
+    printf("\n currentTime:%lu \n ",currentTime);
+    printf("\n NextBeaconRxAdjusted:%lu \n ",Ctx.BeaconCtx.NextBeaconRxAdjusted);
+    printf("\n ##----------------------------------##\n");
     // Start the RX slot state machine for ping and multicast slots
     LoRaMacClassBStartRxSlots( );
 
@@ -699,6 +721,7 @@ bool LoRaMacClassBIsAcquisitionInProgress( void )
 void LoRaMacClassBBeaconTimerEvent( void* context )
 {
 #ifdef LORAMAC_CLASSB_ENABLED
+    printf("\n LoRaMacClassBBeaconTimerEvent\n");
     Ctx.BeaconCtx.TimeStamp = TimerGetCurrentTime( );
     TimerStop( &Ctx.BeaconTimer );
     LoRaMacClassBEvents.Events.Beacon = 1;
@@ -709,10 +732,64 @@ void LoRaMacClassBBeaconTimerEvent( void* context )
     }
 #endif // LORAMAC_CLASSB_ENABLED
 }
-
+const char* getBeaconStatename(enum eBeaconState state)
+{
+    switch (state)
+    {
+        /*!
+        * Initial state to acquire the beacon
+        */
+        case BEACON_STATE_ACQUISITION : return "BEACON_STATE_ACQUISITION"; break;
+        /*!
+        * Beacon acquisition state when a time reference is available
+        */
+        case BEACON_STATE_ACQUISITION_BY_TIME : return "BEACON_STATE_ACQUISITION_BY_TIME"; break;
+        /*!
+        * Handles the state when the beacon reception fails
+        */
+        case BEACON_STATE_TIMEOUT : return "BEACON_STATE_TIMEOUT"; break;
+        /*!
+        * Handles the state when the beacon was missed due to an uplink
+        */
+        case BEACON_STATE_BEACON_MISSED : return "BEACON_STATE_BEACON_MISSED"; break;
+        /*!
+        * Reacquisition state which applies the algorithm to enlarge the reception
+        * windows
+        */
+        case BEACON_STATE_REACQUISITION: return "BEACON_STATE_REACQUISITION"; break;
+        /*!
+        * The node has locked a beacon successfully
+        */
+        case BEACON_STATE_LOCKED : return "BEACON_STATE_LOCKED"; break;
+        /*!
+        * The beacon state machine is stopped due to operations with higher priority
+        */
+        case BEACON_STATE_HALT : return "BEACON_STATE_HALT"; break;
+        /*!
+        * The node currently operates in the beacon window and is idle. In this
+        * state, the temperature measurement takes place
+        */
+        case BEACON_STATE_IDLE: return "BEACON_STATE_IDLE"; break;
+        /*!
+        * The node operates in the guard time of class B
+        */
+        case BEACON_STATE_GUARD: return "BEACON_STATE_GUARD"; break;
+        /*!
+        * The node is in receive mode to lock a beacon
+        */
+        case BEACON_STATE_RX: return "BEACON_STATE_RX"; break;
+        /*!
+        * The nodes switches the device class
+        */
+        case BEACON_STATE_LOST: return "BEACON_STATE_LOST"; break; 
+    }
+    return "INVALID STATE";
+}
 #ifdef LORAMAC_CLASSB_ENABLED
 static void LoRaMacClassBProcessBeacon( void )
 {
+    
+    printf("\nLoRaMacClassBProcessBeacon: BeaconState: %s \n", getBeaconStatename(Ctx.BeaconState) );
     bool activateTimer = false;
     TimerTime_t beaconEventTime = 1;
     RxConfigParams_t beaconRxConfig;
@@ -751,6 +828,7 @@ static void LoRaMacClassBProcessBeacon( void )
                             {
                                 // Apply the offset of the system error respectively beaconing precision setting
                                 beaconEventTime += beaconRxConfig.WindowOffset;
+
                             }
                         }
                         else
@@ -1004,6 +1082,8 @@ static void LoRaMacClassBProcessPingSlot( void )
 
                     // Compute the symbol timeout. Apply it only, if the beacon is acquired
                     // Otherwise, take the enlargement of the symbols into account.
+                    printf("\n ***************************************************************************\n");
+                    printf("\nLoRaMacClassBProcessPingSlot->RegionComputeRxWindowParameters(ClassB PingSlots)\n");
                     RegionComputeRxWindowParameters( *Ctx.LoRaMacClassBParams.LoRaMacRegion,
                                                      ClassBNvm->PingSlotCtx.Datarate,
                                                      Ctx.LoRaMacClassBParams.LoRaMacParams->MinRxSymbols,
@@ -1173,7 +1253,8 @@ static void LoRaMacClassBProcessMulticastSlot( void )
                     // and time precision received from beacon frame format.
                     maxRxError = MAX( Ctx.LoRaMacClassBParams.LoRaMacParams->SystemMaxRxError ,
                                       ( uint32_t ) Ctx.BeaconCtx.BeaconTimePrecision.SubSeconds );
-
+                    printf("\n ***************************************************************************\n");
+                    printf("\nLoRaMacClassBProcessMulticastSlot->RegionComputeRxWindowParameters(ClassB MulticastPingSlots)\n");
                     RegionComputeRxWindowParameters( *Ctx.LoRaMacClassBParams.LoRaMacRegion,
                                                     ClassBNvm->PingSlotCtx.Datarate,
                                                     Ctx.LoRaMacClassBParams.LoRaMacParams->MinRxSymbols,
@@ -1276,6 +1357,7 @@ static void LoRaMacClassBProcessMulticastSlot( void )
 bool LoRaMacClassBRxBeacon( uint8_t *payload, uint16_t size )
 {
 #ifdef LORAMAC_CLASSB_ENABLED
+    printf("\n LoRaMacClassBRxBeacon Processed Beacon \n");
     GetPhyParams_t getPhy;
     PhyParam_t phyParam;
     bool beaconProcessed = false;
@@ -1453,6 +1535,7 @@ bool LoRaMacClassBIsBeaconModeActive( void )
     if( ( Ctx.BeaconCtx.Ctrl.BeaconMode == 1 ) ||
         ( Ctx.BeaconState == BEACON_STATE_ACQUISITION_BY_TIME ) )
     {
+        printf("LoRaMacClassB BeaconMode Active\n");
         return true;
     }
     return false;
@@ -1500,6 +1583,7 @@ void LoRaMacClassBHaltBeaconing( void )
 void LoRaMacClassBResumeBeaconing( void )
 {
 #ifdef LORAMAC_CLASSB_ENABLED
+    printf("LoraMacClassBResumeingBeacon %s", getBeaconStatename(Ctx.BeaconState));
     if( Ctx.BeaconState == BEACON_STATE_HALT )
     {
         Ctx.BeaconCtx.Ctrl.ResumeBeaconing = 1;
@@ -1659,6 +1743,7 @@ void LoRaMacClassBBeaconTimingAns( uint16_t beaconTimingDelay, uint8_t beaconTim
         if( Ctx.BeaconCtx.BeaconTimingDelay > CLASSB_BEACON_INTERVAL )
         {
             // We missed the beacon already
+            printf("Missed Beacon");
             Ctx.BeaconCtx.BeaconTimingDelay = 0;
             Ctx.BeaconCtx.BeaconTimingChannel = 0;
             LoRaMacConfirmQueueSetStatus( LORAMAC_EVENT_INFO_STATUS_BEACON_NOT_FOUND, MLME_BEACON_TIMING );

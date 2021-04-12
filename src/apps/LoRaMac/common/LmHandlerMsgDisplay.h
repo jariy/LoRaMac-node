@@ -52,6 +52,17 @@ void DisplayNetworkParametersUpdate( CommissioningParams_t* commissioningParams 
 void DisplayMacMcpsRequestUpdate( LoRaMacStatus_t status, McpsReq_t *mcpsReq, TimerTime_t nextTxIn );
 
 /*!
+ * \brief Displays updated McpsRequest
+ *
+ * \param [IN] status McpsRequest execution status
+ * \param [IN] mcpsReq McpsRequest command executed
+ * \param [IN] nextTxIn Time to wait for the next uplink transmission
+ * \param [IN] coutner counter for the many BUSY
+ */
+void DisplayMacMcpsRequestUpdate1( LoRaMacStatus_t status, McpsReq_t *mcpsReq, TimerTime_t nextTxIn, int *counterMCPS);
+
+
+/*!
  * \brief Displays updated MlmeRequest
  *
  * \param [IN] status MlmeRequest execution status
@@ -59,6 +70,16 @@ void DisplayMacMcpsRequestUpdate( LoRaMacStatus_t status, McpsReq_t *mcpsReq, Ti
  * \param [IN] nextTxIn Time to wait for the next uplink transmission
  */
 void DisplayMacMlmeRequestUpdate( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn );
+
+ /*!
+ * \brief Displays updated MlmeRequest
+ *
+ * \param [IN] status MlmeRequest execution status
+ * \param [IN] mlmeReq MlmeRequest command executed
+ * \param [IN] nextTxIn Time to wait for the next uplink transmission
+ * \param [IN] coutner counter for the many BUSY
+ */
+void DisplayMacMlmeRequestUpdate1( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn, int *counter);
 
 /*!
  * \brief Displays updated JoinRequest

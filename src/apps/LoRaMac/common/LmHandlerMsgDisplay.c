@@ -145,9 +145,20 @@ void DisplayNetworkParametersUpdate( CommissioningParams_t *commissioningParams 
     }
     printf( "\n\n" );
 }
-
-void DisplayMacMcpsRequestUpdate( LoRaMacStatus_t status, McpsReq_t *mcpsReq, TimerTime_t nextTxIn )
+void DisplayMacMcpsRequestUpdate1( LoRaMacStatus_t status, McpsReq_t *mcpsReq, TimerTime_t nextTxIn, int *counterMCPS1)
 {
+    if (status == LORAMAC_STATUS_BUSY || LORAMAC_STATUS_BUSY_BEACON_RESERVED_TIME || LORAMAC_STATUS_BUSY_PING_SLOT_WINDOW_TIME || LORAMAC_STATUS_BUSY_UPLINK_COLLISION)
+    {
+        if (*counterMCPS1 <= 10)
+        {
+            *counterMCPS1++;
+        }
+        if (*counterMCPS1 > 10)
+        {
+            *counterMCPS1++; 
+            return;
+        }
+    }
     switch( mcpsReq->Type )
     {
         case MCPS_CONFIRMED:
@@ -179,6 +190,60 @@ void DisplayMacMcpsRequestUpdate( LoRaMacStatus_t status, McpsReq_t *mcpsReq, Ti
             break;
         }
     }
+    //printf("LoRaMAC Status: %i\n",status);
+    if (status == LORAMAC_STATUS_BUSY || LORAMAC_STATUS_BUSY_BEACON_RESERVED_TIME || LORAMAC_STATUS_BUSY_PING_SLOT_WINDOW_TIME || LORAMAC_STATUS_BUSY_UPLINK_COLLISION)
+    {
+        int x = *counterMCPS1;
+        printf( "STATUS      : %s Counter: %i \n", MacStatusStrings[status], x);
+    }
+    else
+    {
+        printf( "STATUS      : %s\n", MacStatusStrings[status] );
+    }
+    if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
+    {
+        printf( "Next Tx in  : %lu [ms]\n", nextTxIn );
+    }
+}
+void DisplayMacMcpsRequestUpdate( LoRaMacStatus_t status, McpsReq_t *mcpsReq, TimerTime_t nextTxIn )
+{
+     if (status == LORAMAC_STATUS_BUSY)
+    {
+        return;
+    }
+    
+    switch( mcpsReq->Type )
+    {
+        case MCPS_CONFIRMED:
+        {
+            printf( "\n###### =========== MCPS-Request ============ ######\n" );
+            printf( "######            MCPS_CONFIRMED             ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        case MCPS_UNCONFIRMED:
+        {
+            printf( "\n###### =========== MCPS-Request ============ ######\n" );
+            printf( "######           MCPS_UNCONFIRMED            ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        case MCPS_PROPRIETARY:
+        {
+            printf( "\n###### =========== MCPS-Request ============ ######\n" );
+            printf( "######           MCPS_PROPRIETARY            ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        default:
+        {
+            printf( "\n###### =========== MCPS-Request ============ ######\n" );
+            printf( "######                MCPS_ERROR             ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+    }
+    //printf("LoRaMAC Status: %i\n",status);
     printf( "STATUS      : %s\n", MacStatusStrings[status] );
     if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
     {
@@ -186,8 +251,21 @@ void DisplayMacMcpsRequestUpdate( LoRaMacStatus_t status, McpsReq_t *mcpsReq, Ti
     }
 }
 
-void DisplayMacMlmeRequestUpdate( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn )
+void DisplayMacMlmeRequestUpdate1( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn, int *counter1)
 {
+        if (status == LORAMAC_STATUS_BUSY || LORAMAC_STATUS_BUSY_BEACON_RESERVED_TIME || LORAMAC_STATUS_BUSY_PING_SLOT_WINDOW_TIME || LORAMAC_STATUS_BUSY_UPLINK_COLLISION)
+    {
+        if (*counter1 <= 10)
+        {
+            *counter1++;
+        }
+        if (*counter1 > 10)
+        {
+            *counter1++; 
+            return;
+        }
+        return;
+    }
     switch( mlmeReq->Type )
     {
         case MLME_JOIN:
@@ -226,6 +304,67 @@ void DisplayMacMlmeRequestUpdate( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, Ti
             break;
         }
     }
+    //printf("LoRaMAC Status: %i\n",status);
+    if (status == LORAMAC_STATUS_BUSY)
+    {
+        int x = *counter1;
+        printf( "STATUS      : %s Counter: %i \n", MacStatusStrings[status], x);
+    }
+    else
+    {
+        printf( "STATUS      : %s\n", MacStatusStrings[status] );
+    }
+
+    if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
+    {
+        printf( "Next Tx in  : %lu [ms]\n", nextTxIn );
+    }
+}
+void DisplayMacMlmeRequestUpdate( LoRaMacStatus_t status, MlmeReq_t *mlmeReq, TimerTime_t nextTxIn )
+{
+    if (status == LORAMAC_STATUS_BUSY)
+    {
+        return;
+    }
+    switch( mlmeReq->Type )
+    {
+        case MLME_JOIN:
+        {
+            printf( "\n###### =========== MLME-Request ============ ######\n" );
+            printf( "######               MLME_JOIN               ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        case MLME_LINK_CHECK:
+        {
+            printf( "\n###### =========== MLME-Request ============ ######\n" );
+            printf( "######            MLME_LINK_CHECK            ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        case MLME_DEVICE_TIME:
+        {
+            printf( "\n###### =========== MLME-Request ============ ######\n" );
+            printf( "######            MLME_DEVICE_TIME           ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        case MLME_TXCW:
+        {
+            printf( "\n###### =========== MLME-Request ============ ######\n" );
+            printf( "######               MLME_TXCW               ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+        default:
+        {
+            printf( "\n###### =========== MLME-Request ============ ######\n" );
+            printf( "######              MLME_UNKNOWN             ######\n");
+            printf( "###### ===================================== ######\n");
+            break;
+        }
+    }
+    //printf("LoRaMAC Status: %i\n",status);
     printf( "STATUS      : %s\n", MacStatusStrings[status] );
     if( status == LORAMAC_STATUS_DUTYCYCLE_RESTRICTED )
     {

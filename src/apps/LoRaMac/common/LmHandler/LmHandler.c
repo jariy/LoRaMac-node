@@ -527,16 +527,19 @@ static LmHandlerErrorStatus_t LmHandlerDeviceTimeReq( void )
 
     if( status == LORAMAC_STATUS_OK )
     {
+        printf("LmHandlerDeviceTimeReq Success\n");
         return LORAMAC_HANDLER_SUCCESS;
     }
     else
     {
+        printf("LmHandlerDeviceTimeReq Failed\n");
         return LORAMAC_HANDLER_ERROR;
     }
 }
 
 static LmHandlerErrorStatus_t LmHandlerBeaconReq( void )
 {
+    printf("Starting Beacon Searching");
     LoRaMacStatus_t status;
     MlmeReq_t mlmeReq;
 
@@ -548,10 +551,12 @@ static LmHandlerErrorStatus_t LmHandlerBeaconReq( void )
 
     if( status == LORAMAC_STATUS_OK )
     {
+        printf("Beacon Searching OK");
         return LORAMAC_HANDLER_SUCCESS;
     }
     else
     {
+         printf("Beacon Searching ERROR");
         return LORAMAC_HANDLER_ERROR;
     }
 }
@@ -620,13 +625,23 @@ LmHandlerErrorStatus_t LmHandlerRequestClass( DeviceClass_t newClass )
             break;
         case CLASS_B:
             {
+                printf("Attempting Class B switching");
                 if( currentClass != CLASS_A )
                 {
                     errorStatus = LORAMAC_HANDLER_ERROR;
                 }
                 // Beacon must first be acquired
-                errorStatus = LmHandlerDeviceTimeReq( );
-                IsClassBSwitchPending = true;
+                /*
+                errorStatus = LmHandlerBeaconReq();
+                while (errorStatus != LORAMAC_HANDLER_SUCCESS)
+                {
+                    errorStatus = LmHandlerBeaconReq();
+                }
+                if(errorStatus == LORAMAC_HANDLER_SUCCESS)
+                {
+                */
+                   errorStatus = LmHandlerDeviceTimeReq( );
+                   IsClassBSwitchPending = true;
             }
             break;
         case CLASS_C:

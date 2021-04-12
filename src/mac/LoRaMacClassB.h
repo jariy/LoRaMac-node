@@ -295,7 +295,14 @@ typedef struct sLoRaMacClassBParams
  * non-volatile needs to be saved.
  */
 typedef void ( *LoRaMacClassBNvmEvent )( void );
-
+/*!
+ * \brief Prints out Beacon State Names
+ *
+ * \param [IN] eBeaconState enum 
+ * \param [OUT] const char* of name
+ * 
+ */
+const char* getBeaconStatename(enum eBeaconState state);
 /*!
  * \brief Initialize LoRaWAN Class B
  *

@@ -45,7 +45,7 @@
 #include "LoRaMacAdr.h"
 #include "LoRaMacSerializer.h"
 #include "radio.h"
-
+#include "stdio.h"
 #include "LoRaMac.h"
 
 #ifndef LORAMAC_VERSION
@@ -2262,6 +2262,7 @@ static void ProcessMacCommands( uint8_t *payload, uint8_t macIndex, uint8_t comm
             }
             case SRV_MAC_BEACON_TIMING_ANS:
             {
+                printf("SRV_MAC_BEACON_TIMING_ANS");
                 if( LoRaMacConfirmQueueIsCmdActive( MLME_BEACON_TIMING ) == true )
                 {
                     LoRaMacConfirmQueueSetStatus( LORAMAC_EVENT_INFO_STATUS_OK, MLME_BEACON_TIMING );
@@ -2452,6 +2453,8 @@ static LoRaMacStatus_t CheckForClassBCollision( void )
 static void ComputeRxWindowParameters( void )
 {
     // Compute Rx1 windows parameters
+    printf("\n ***************************************************************************\n");
+    printf("\nComputerRxWindowParamater->RegionComputeRxWindowParameters(RX1)\n");
     RegionComputeRxWindowParameters( Nvm.MacGroup2.Region,
                                      RegionApplyDrOffset( Nvm.MacGroup2.Region,
                                                           Nvm.MacGroup2.MacParams.DownlinkDwellTime,
@@ -2461,6 +2464,8 @@ static void ComputeRxWindowParameters( void )
                                      Nvm.MacGroup2.MacParams.SystemMaxRxError,
                                      &MacCtx.RxWindow1Config );
     // Compute Rx2 windows parameters
+    printf("\n ***************************************************************************\n");
+    printf("\nComputerRxWindowParamater->RegionComputeRxWindowParameters(RX2)\n");
     RegionComputeRxWindowParameters( Nvm.MacGroup2.Region,
                                      Nvm.MacGroup2.MacParams.Rx2Channel.Datarate,
                                      Nvm.MacGroup2.MacParams.MinRxSymbols,
@@ -2780,6 +2785,8 @@ static void RxWindowSetup( TimerEvent_t* rxTimer, RxConfigParams_t* rxConfig )
 static void OpenContinuousRxCWindow( void )
 {
     // Compute RxC windows parameters
+    printf("\n ***************************************************************************\n");
+    printf("\nOpenContinuousRxCWindow->RegionComputeRxWindowParameters(ClassC RxWindows\n");
     RegionComputeRxWindowParameters( Nvm.MacGroup2.Region,
                                      Nvm.MacGroup2.MacParams.RxCChannel.Datarate,
                                      Nvm.MacGroup2.MacParams.MinRxSymbols,
@@ -4534,6 +4541,11 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t* mlmeRequest )
     {
         return LORAMAC_STATUS_PARAMETER_INVALID;
     }
+
+    // Initialize mlmeRequest->ReqReturn.DutyCycleWaitTime to 0 in order to
+    // return a valid value in case the MAC is busy.
+    mlmeRequest->ReqReturn.DutyCycleWaitTime = 0;
+
     if( LoRaMacIsBusy( ) == true )
     {
         return LORAMAC_STATUS_BUSY;
@@ -4709,6 +4721,11 @@ LoRaMacStatus_t LoRaMacMcpsRequest( McpsReq_t* mcpsRequest )
     {
         return LORAMAC_STATUS_PARAMETER_INVALID;
     }
+    
+    // Initialize mcpsRequest->ReqReturn.DutyCycleWaitTime to 0 in order to
+    // return a valid value in case the MAC is busy.
+    mcpsRequest->ReqReturn.DutyCycleWaitTime = 0;
+
     if( LoRaMacIsBusy( ) == true )
     {
         return LORAMAC_STATUS_BUSY;
