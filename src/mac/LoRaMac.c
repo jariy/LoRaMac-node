@@ -267,11 +267,12 @@ typedef union uLoRaMacRadioEvents
     uint32_t Value;
     struct sEvents
     {
-        uint32_t RxTimeout : 1;
-        uint32_t RxError   : 1;
-        uint32_t TxTimeout : 1;
-        uint32_t RxDone    : 1;
-        uint32_t TxDone    : 1;
+        uint32_t RxProcessPending : 1;
+        uint32_t RxTimeout        : 1;
+        uint32_t RxError          : 1;
+        uint32_t TxTimeout        : 1;
+        uint32_t RxDone           : 1;
+        uint32_t TxDone           : 1;
     }Events;
 }LoRaMacRadioEvents_t;
 
@@ -706,6 +707,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
     RxDoneParams.Snr = snr;
 
     LoRaMacRadioEvents.Events.RxDone = 1;
+    LoRaMacRadioEvents.Events.RxProcessPending = 1;
 
     if( ( MacCtx.MacCallbacks != NULL ) && ( MacCtx.MacCallbacks->MacProcessNotify != NULL ) )
     {
@@ -838,6 +840,8 @@ static void ProcessRadioRxDone( void )
     uint8_t multicast = 0;
     AddressIdentifier_t addrID = UNICAST_DEV_ADDR;
     FCntIdentifier_t fCntID;
+
+    LoRaMacRadioEvents.Events.RxProcessPending = 0;
 
     MacCtx.McpsConfirm.AckReceived = false;
     MacCtx.McpsIndication.Rssi = rssi;
@@ -1237,11 +1241,16 @@ static void ProcessRadioRxDone( void )
     }
 
     // Verify if we need to disable the RetransmitTimeoutTimer
-    if( MacCtx.NodeAckRequested == true )
+    // Only aplies if downlink is received on Rx1 or Rx2 windows.
+    if( ( MacCtx.McpsIndication.RxSlot == RX_SLOT_WIN_1 ) ||
+        ( MacCtx.McpsIndication.RxSlot == RX_SLOT_WIN_2 ) )
     {
-        if( MacCtx.McpsConfirm.AckReceived == true )
+        if( MacCtx.NodeAckRequested == true )
         {
-            OnRetransmitTimeoutTimerEvent( NULL );
+            if( MacCtx.McpsConfirm.AckReceived == true )
+            {
+                OnRetransmitTimeoutTimerEvent( NULL );
+            }
         }
     }
 
@@ -1377,6 +1386,11 @@ static void LoRaMacHandleIrqEvents( void )
 
 bool LoRaMacIsBusy( void )
 {
+    if( LoRaMacRadioEvents.Events.RxProcessPending == 1 )
+    {
+        return true;
+    }
+
     if( ( MacCtx.MacState == LORAMAC_IDLE ) &&
         ( MacCtx.AllowRequests == LORAMAC_REQUEST_HANDLING_ON ) )
     {
@@ -1689,13 +1703,18 @@ void LoRaMacProcess( void )
         }
         LoRaMacHandleRequestEvents( );
         LoRaMacHandleScheduleUplinkEvent( );
-        LoRaMacHandleNvm( &Nvm );
         LoRaMacEnableRequests( LORAMAC_REQUEST_HANDLING_ON );
+        MacCtx.MacFlags.Bits.NvmHandle = 1;
     }
     LoRaMacHandleIndicationEvents( );
     if( MacCtx.RxSlot == RX_SLOT_WIN_CLASS_C )
     {
         OpenContinuousRxCWindow( );
+    }
+    if( MacCtx.MacFlags.Bits.NvmHandle == 1 )
+    {
+        MacCtx.MacFlags.Bits.NvmHandle = 0;
+        LoRaMacHandleNvm( &Nvm );
     }
 }
 
@@ -3406,6 +3425,9 @@ LoRaMacStatus_t LoRaMacInitialization( LoRaMacPrimitives_t* primitives, LoRaMacC
     // Store the current initialization time
     Nvm.MacGroup2.InitializationTime = SysTimeGetMcuTime( );
 
+    // Initialize MAC radio events
+    LoRaMacRadioEvents.Value = 0;
+
     // Initialize Radio driver
     MacCtx.RadioEvents.TxDone = OnRadioTxDone;
     MacCtx.RadioEvents.RxDone = OnRadioRxDone;
@@ -4375,6 +4397,12 @@ LoRaMacStatus_t LoRaMacMibSetRequestConfirm( MibRequestConfirm_t* mibSet )
             status = LoRaMacMibClassBSetRequestConfirm( mibSet );
             break;
         }
+    }
+
+    if( status == LORAMAC_STATUS_OK )
+    {
+        // Handle NVM potential changes
+        MacCtx.MacFlags.Bits.NvmHandle = 1;
     }
     return status;
 }
